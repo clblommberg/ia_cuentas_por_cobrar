@@ -1,13 +1,6 @@
 .ipynb_checkpoints
 env_accble/
-
-conexionsql.py
-dash - Copy.xlsx
-doc.txt
-merged_df - Copy.xlsx
-procesing_modelo copy.py
-
-Source.gv
+env/
 tree
 
 
