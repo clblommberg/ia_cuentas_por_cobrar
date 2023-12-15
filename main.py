@@ -16,6 +16,7 @@ from panel.interact import interact
 pn.extension()
 pn.extension('tabulator')
 
+
 from bokeh.transform import cumsum
 from bokeh.plotting import figure
 import plotly.express as px
@@ -38,36 +39,6 @@ idf = df.interactive()
 df['year'] = df['Fecha Creacion'].dt.year
 df['Ciudad'].unique()
 
-
-"""
-# create geolocator object
-geolocator = Nominatim(user_agent="my_app")
-
-# define function to get latitudes and longitudes
-def get_lat_lon(dataframe, col, geolocator):
-    latitudes = []
-    longitudes = []
-    for city in dataframe[col]:
-        while True:
-            try:
-                location = geolocator.geocode(city)
-                if location:
-                    latitudes.append(location.latitude)
-                    longitudes.append(location.longitude)
-                else:
-                    latitudes.append(None)
-                    longitudes.append(None)
-                break
-            except GeocoderUnavailable:
-                print("GeocoderUnavailable: retrying after 5 seconds...")
-                time.sleep(5)
-    dataframe['Latitud'] = pd.Series(latitudes)
-    dataframe['Longitud'] = pd.Series(longitudes)
-
-# call the function to add latitudes and longitudes to the dataframe
-get_lat_lon(df, 'Ciudad', geolocator)
-"""
-
 df.info()
 
 
@@ -75,30 +46,29 @@ df.info()
 year_slider = pn.widgets.IntSlider(name='Year', start=2011, end=2021, value=2021, width=800)
 yaxis_year_world = pn.widgets.RadioButtonGroup(name='Y axis', options=['Monto', 'Precio'], button_type='success')
 
+# Esta función actualiza el gráfico en función del año seleccionado y el eje Y
 @pn.depends(year_slider.param.value, yaxis_year_world.param.value)
 def update_plot(year, yaxis):
-    # Filter the data based on the selected year
+    # Filtrar los datos según el año seleccionado
     df_year = df[df['year'] <= year]
-    # Calculate total sales and average price for each year
+    # Calcular las ventas totales y el precio promedio para cada año
     sales_quantity = df_year.groupby('year')['Monto'].sum() / 1000
     sales_price = df_year.groupby('year')['Precio'].mean()
-    # Combine the total sales and average price data for each year
+    # Combinar los datos de ventas totales y precio promedio para cada año
     sales_data = pd.concat([sales_quantity, sales_price], axis=1)
     sales_data = sales_data.reset_index()
     sales_data = sales_data.melt(id_vars='year', var_name='yaxis', value_name='value')
-    # Filter the sales data based on the selected y-axis
+    # Filtrar los datos de ventas según el eje Y seleccionado
     sales_data = sales_data[sales_data['yaxis'] == yaxis]
-    # Create the plot
-    if yaxis == 'Monto':
-        p = bp.figure(title='Facturación por año', plot_width=800, plot_height=400, x_range=(2011, 2021), y_range=(0, sales_quantity.max()*1.1))
-        p.yaxis.axis_label = "Facturación (en Miles)"
-        p.line(x='year', y='value', source=sales_data, color=Spectral4[0], line_width=2)
-    else:
-        p = bp.figure(title='Price by Year', plot_width=800, plot_height=400, x_range=(2011, 2021), y_range=(0, sales_price.max()*1.1))
-        p.yaxis.axis_label = "Price"
-        p.xaxis.axis_label = "Year"
-        p.line(x='year', y='value', source=sales_data, color=Spectral4[0], line_width=2)
+    # Crear el gráfico
+    p = bp.figure(title='Facturación por año' if yaxis == 'Monto' else 'Precio por año',
+                  width=800, height=400, x_range=(2011, 2021),
+                  y_range=(0, sales_quantity.max() * 1.1) if yaxis == 'Monto' else (0, sales_price.max() * 1.1))
+    p.xaxis.axis_label = "Year"
+    p.yaxis.axis_label = "Facturación (en Miles)" if yaxis == 'Monto' else "Price"
+    p.line(x='year', y='value', source=sales_data, color=Spectral4[0], line_width=2)
     return pn.pane.Bokeh(p)
+
 
 
 # Define widgets
@@ -155,7 +125,7 @@ def show_top_products_pie_chart(year):
     # Get the top 10 selling products
     top_products = sales_data.nlargest(10, 'Monto')
     # Create a pie chart of the top 10 selling products
-    fig = px.pie(top_products, values='Monto', names='Producto', title='Top 10 Selling Products')
+    fig = px.pie(top_products, values='Monto', names='Producto', title='Top 10 Selling Products',template="plotly_dark")
     return pn.pane.Plotly(fig)
 
 def show_top_risk_table():
@@ -189,7 +159,7 @@ def show_top_Vendedor_bar_chart(year):
     top_vendors = sales_data.nlargest(10, 'Monto')
     # Create a bar chart of the top 10 selling vendors
     fig = px.bar(top_vendors, x='Vendedor', y='Monto', title=f'Top 10 Vendors for {year}', 
-                 labels={'Vendedor': 'Vendor', 'Monto': 'Total Sales'})
+                 labels={'Vendedor': 'Vendor', 'Monto': 'Total Sales'},template="plotly_dark")
     fig.update_layout(xaxis={'title': 'Year'})
     return pn.pane.Plotly(fig)
 
@@ -233,44 +203,21 @@ def show_ciudad_table():
 
     # Display all the data
     return pn.Column(pn.pane.Markdown("#Ciudades y facturacion"), pn.pane.DataFrame(data_ciudad, width=800))
-
-"""
-# Define a function to create the city location map
-def create_city_location_map():
-    # Set CRS
-    crs = {'init': 'epsg:4326'}
-
-    # Convert DataFrame to GeoDataFrame
-    gdf = gpd.GeoDataFrame(df, crs=crs, geometry=gpd.points_from_xy(df.Longitud, df.Latitud))
-
-    # Convert Timestamp to string
-    gdf['Date'] = gdf['Fecha Creacion'].dt.strftime('%Y-%m-%d %H:%M:%S')
-
-    # Plotting map with folium
-    city_map = folium.Map(location=gdf[['Latitud', 'Longitud']].mean().values.tolist(), zoom_start=2.2, width='100%', height='100%')
-    title_html = '''
-                 <h3 align="center" style="font-size:20px"><b>City Location Map </b></h3>
-                 '''
-    city_map.get_root().html.add_child(folium.Element(title_html))
-
-    # Add markers layer
-    for _, row in gdf.iterrows():
-        city = row['Ciudad']
-        lat = row['Latitud']
-        lon = row['Longitud']
-        date = row['Date']
-        folium.Marker([lat, lon], popup=f'{city} {date}').add_to(city_map)
-
-    # Return the map as a Panel object
-    return pn.panel(city_map._repr_html_(), width=800, height=600)
-"""
-# Define the layout using Template
+ACCENT = "#BB2649"
+RED = "#D94467"
+GREEN = "#5AD534"
+# Define tus funciones y variables aquí...
 template = pn.template.FastListTemplate(
     title='Enterprise dashboard 2011-2021', 
     sidebar=[pn.pane.Markdown("# Enterprise dashboard 2011-2021"), 
              pn.pane.Markdown("#### This compiled dataset pulled from four other datasets linked by time and place, and was built to find signals correlated to increased")], 
-    accent_base_color="#88d8b0",
-    header_background="#88d8b0",
+    accent_base_color=ACCENT,
+    header_background=ACCENT,
+    #prevent_collision=True,
+    #save_layout=True,
+    theme_toggle=False,
+    theme='dark',
+    #row_height=160,
     main=[
         year_slider,  
         yaxis_year_world, 
@@ -292,41 +239,7 @@ template = pn.template.FastListTemplate(
     ]
 )
 
-"""
-        pn.Row(pn.Column(show_ciudad_table, width=900), 
-               pn.Column(create_city_location_map)),
-def create_city_location_map():
-    # Set CRS
-    crs = {'init': 'epsg:4326'}
-
-    # Convert DataFrame to GeoDataFrame
-    gdf = gpd.GeoDataFrame(df, crs=crs, geometry=gpd.points_from_xy(df.Longitud, df.Latitud))
-
-    # Convert Timestamp to string
-    gdf['Date'] = gdf['Fecha Creacion'].dt.strftime('%Y-%m-%d %H:%M:%S')
-
-    # Plotting map with folium
-    city_map = folium.Map(location=[0, 0], zoom_start=2.2)
-    title_html = '''
-                 <h3 align="center" style="font-size:20px"><b>City Location Map </b></h3>
-                 '''
-    city_map.get_root().html.add_child(folium.Element(title_html))
-
-    # Add markers layer
-    for index, row in gdf.iterrows():
-        city = row['Ciudad']
-        lat = row['Latitud']
-        lon = row['Longitud']
-        date = row['Date']
-        folium.Marker([lat, lon], popup=city + ' ' + date).add_to(city_map)
-
-    return city_map
-
-"""
-
-
-
 template.show()
-#template.servable()
+
 
 
