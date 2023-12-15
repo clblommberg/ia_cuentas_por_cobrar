@@ -32,7 +32,6 @@ from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import GridSearchCV
 
 import os
-import pandas as pd
 # Obtener la ruta del directorio actual
 ruta_actual = os.getcwd()
 print(ruta_actual)

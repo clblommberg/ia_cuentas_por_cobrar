@@ -27,7 +27,7 @@ import time
 
 # cache data to improve dashboard performance
 if 'data' not in pn.state.cache.keys():
-    df = pd.read_excel('./dash.xlsx')
+    df = pd.read_excel('data/processed/dashboard.xlsx')
     pn.state.cache['data'] = df.copy()
 else: 
     df = pn.state.cache['data']
@@ -326,7 +326,7 @@ def create_city_location_map():
 
 
 
-#template.show()
-template.servable()
+template.show()
+#template.servable()
 
 
