@@ -26,6 +26,7 @@ from geopy.exc import GeocoderUnavailable
 import time
 
 
+
 # cache data to improve dashboard performance
 if 'data' not in pn.state.cache.keys():
     df = pd.read_excel('data/processed/dashboard.xlsx')
@@ -240,6 +241,4 @@ template = pn.template.FastListTemplate(
 )
 
 template.show()
-
-
 

@@ -32,21 +32,15 @@ from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import GridSearchCV
 
 import os
-# Obtener la ruta del directorio actual
-ruta_actual = os.getcwd()
-print(ruta_actual)
-# Crear una ruta relativa basada en el directorio actual
-ruta_relativa = os.path.join(ruta_actual, 'data/raw/data.xlsx')
 
-print(ruta_relativa)
 
 #Leer el archivo con pandas 
 #working_dir = "accountant_receivable/"
 
-df_mayor = pd.read_excel(ruta_relativa, sheet_name="ldiario")
-df_clients = pd.read_excel(ruta_relativa, sheet_name="clientes")
-df_sales = pd.read_excel(ruta_relativa, sheet_name="ventas")
-df_enterprise= pd.read_excel(ruta_relativa, sheet_name="empresa")
+df_mayor = pd.read_excel('data/raw/data.xlsx', sheet_name="ldiario")
+df_clients = pd.read_excel('data/raw/data.xlsx', sheet_name="clientes")
+df_sales = pd.read_excel('data/raw/data.xlsx', sheet_name="ventas")
+df_enterprise= pd.read_excel('data/raw/data.xlsx', sheet_name="empresa")
 
 #print(df_mayor.head())
 #print(df_clients.info())
@@ -420,7 +414,7 @@ resultados.head()
 sns.lineplot(x='max_depth', y='train', data=resultados)
 sns.lineplot(x='max_depth', y='test', data=resultados)
 plt.legend(['Train','Test']) 
-plt.show()
+plt.savefig('images/lineplot.jpg')
 
 
 def iniciar_arbol_de_decision(max_depth, min_samples_leaf):
@@ -454,11 +448,11 @@ corr = resultados.corr()
 print(corr)
 
 sns.heatmap(corr)
-plt.show()
+plt.savefig('images/heatmap.jpg')
 
 from pandas.plotting import scatter_matrix
 scatter_matrix(resultados, figsize = (14,8), alpha=0.3)
-plt.show()
+plt.savefig('images/matrix.jpg')
 print('###################################################################################6')
 
 from sklearn.model_selection import KFold
